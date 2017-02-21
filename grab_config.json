@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {"site":"http://wanga.me",
+      "replace":[
+        {"\r\n\r\n":"\n"}],
+      "games_page_max":"//div[@id=\"nav-below\"]/a[3]/text()",
+      "games_page_url":"http://wanga.me/page/",
+      "games_href":"//div[@class=\"game-info\"]/a[1]/@href",
+      "game_name":"//h1[@class=\"entry-title\"]/text()",
+      "game_detail":"//div[@id=\"description\"]/text()",
+      "game_src":"//p[@class=\"swf\"]/embed/@src",
+      "charset":"utf8",
+      "readme":"download_novel 传入为指定小说全部目录页面入口"
+    }
+  ]
+}
