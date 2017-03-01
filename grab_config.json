@@ -7,7 +7,7 @@
       "games_page_url":"http://wanga.me/page/",
       "games_href":"//div[@class=\"game-info\"]/a[1]/@href",
       "game_name":"//h1[@class=\"entry-title\"]/text()",
-      "game_detail":"//div[@id=\"description\"]/text()",
+      "game_detail":"//div[@id=\"description\"]//p/text()",
       "game_src":"//p[@class=\"swf\"]/embed/@src",
       "charset":"utf8",
       "readme":"wanga 游戏抓取"
