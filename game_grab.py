@@ -33,7 +33,7 @@ def get_content(url, xpath, charset):
         print("[err] %s" % url)
         print(traceback.format_exc())
         try_times -= 1
-        if (try_times > 0):
+        if try_times > 0:
             return get_content(url, xpath, charset)
         return None
 
@@ -77,14 +77,15 @@ def download(rule_id):
     # pool.close()
     # pool.join()
     game_list = list(itertools.chain(*game_list))
-    print('[debug] downloaded %d game urls. used:%f s' % (len(game_list), clock() - st))
+    print('[debug] downloaded %d game urls. used:%f s' %
+          (len(game_list), clock() - st))
     print('[debug] downloading game details, waiting.')
     func = partial(get_game_info, 0)
     games_info = pool.map(func, game_list)
     pool.close()
     pool.join()
     for gi in games_info:
-        save_txt(str(rule_id)+".txt",str(gi))
+        save_txt(str(rule_id) + ".txt", str(gi) + "\n")
 
 
 '''

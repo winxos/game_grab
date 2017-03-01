@@ -10,7 +10,7 @@
       "game_detail":"//div[@id=\"description\"]/text()",
       "game_src":"//p[@class=\"swf\"]/embed/@src",
       "charset":"utf8",
-      "readme":"download_novel 传入为指定小说全部目录页面入口"
+      "readme":"wanga 游戏抓取"
     }
   ]
 }
