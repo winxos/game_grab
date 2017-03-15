@@ -1,67 +1,76 @@
 # coding:utf-8
-'''
-game factory scraper
-env:python 3.6 + lxml
-license:MIT
-author:winxos
-since:2017-02-19
-'''
+# game factory scraper
+# env:python 3.6 + lxml
+# license:MIT
+# author:winxos
+# since:2017-02-19
+
 import urllib.request
 import itertools
 from lxml import etree
 import json
-from multiprocessing import Pool, Manager
+from multiprocessing import Pool
 from time import clock
-import traceback
 from functools import partial
 
 POOLS_SIZE = 20
 TRY_TIMES = 3
 SINGLE_THREAD_DEBUG = False
 # SINGLE_THREAD_DEBUG = True
+CONFIG = None
 
-with open('grab_config.json', 'r', encoding='utf-8') as f:
-    CONFIG = json.load(f)
+try:
+    with open('grab_config.json', 'r', encoding='utf-8') as fg:
+        CONFIG = json.load(fg)
+        print("[debug] config loaded.")
+except IOError as e:
+    print("[error] %s" % e)
+    exit()
 
 
-def get_content(url, xpath, charset):
+def get_content(url, charset):
     global TRY_TIMES
     try:
-        f = urllib.request.urlopen(url)
-        c = etree.HTML(f.read().decode(charset))
-        TRY_TIMES = 3
-        return c.xpath(xpath)
-    except Exception as e:  # 捕捉访问异常，一般为timeout，信息在e中
-        print("[err] %s" % url)
-        print(traceback.format_exc())
+        fc = urllib.request.urlopen(url)
+        TRY_TIMES = 10  # todo 用类进行封装
+        return etree.HTML(fc.read().decode(charset))
+    except TimeoutError:  # 捕捉访问异常，一般为timeout，信息在e中
+        print("[retry %d] %s" % (TRY_TIMES, url))
+        # print(traceback.format_exc())
         TRY_TIMES -= 1
         if TRY_TIMES > 0:
-            return get_content(url, xpath, charset)
+            return get_content(url, charset)
         return None
 
 
-def get_pages(RULE_ID):
-    page_max = int(get_content(CONFIG["rules"][RULE_ID]["games_page_url"] + "1",
-                               CONFIG["rules"][RULE_ID]["games_page_max"],
-                               CONFIG["rules"][RULE_ID]["charset"])[0])
-    return [CONFIG["rules"][RULE_ID]["games_page_url"] + str(i) for i in range(1, page_max + 1)]
+def get_items(selector, xpath):
+    return selector.xpath(xpath)
 
 
-def get_page_games(RULE_ID, url):
-    games_href = get_content(url, CONFIG["rules"][RULE_ID]["games_href"],
-                             CONFIG["rules"][RULE_ID]["charset"])
+def get_pages(rule_id):
+    s = get_content(CONFIG["rules"][rule_id]["games_page_url"] + "1", CONFIG["rules"][rule_id]["charset"])
+    if s is None:
+        return
+    page_max = int(get_items(s, CONFIG["rules"][rule_id]["games_page_max"])[0])
+    return [CONFIG["rules"][rule_id]["games_page_url"] + str(i) for i in range(1, page_max + 1)]
+
+
+def get_page_games(rule_id, url):
+    s = get_content(url, CONFIG["rules"][rule_id]["charset"])
+    if s is None:
+        return
+    games_href = get_items(s, CONFIG["rules"][rule_id]["games_href"])
     return games_href
 
 
-def get_game_info(RULE_ID, url):
-    game_name = "".join(get_content(url, CONFIG["rules"][RULE_ID]["game_name"],
-                                    CONFIG["rules"][RULE_ID]["charset"]))
-    game_detail = "".join([x.strip() for x in
-                           get_content(url, CONFIG["rules"][RULE_ID]["game_detail"],
-                                       CONFIG["rules"][RULE_ID]["charset"])])
-    game_src = "".join(get_content(url, CONFIG["rules"][RULE_ID]["game_src"],
-                                   CONFIG["rules"][RULE_ID]["charset"]))
-    return (game_name, game_detail, url, game_src)
+def get_game_info(rule_id, url):
+    s = get_content(url, CONFIG["rules"][rule_id]["charset"])
+    if s is None:
+        return
+    game_name = "".join(get_items(s, CONFIG["rules"][rule_id]["game_name"]))
+    game_detail = "".join([x.strip() for x in get_items(s, CONFIG["rules"][rule_id]["game_detail"])])
+    game_src = "".join(get_items(s, CONFIG["rules"][rule_id]["game_src"]))
+    return game_name, game_detail, url, game_src
 
 
 def save_txt(name, data, mode='a'):
@@ -71,7 +80,7 @@ def save_txt(name, data, mode='a'):
 
 def download(rule_id):
     st = clock()
-    pool = Pool(processes=POOLS_SIZE)
+    pool = Pool(processes=int(CONFIG["rules"][rule_id]["pool_size"]))
     print("[debug] downloading game pages list.")
     page_urls = get_pages(rule_id)
     func = partial(get_page_games, rule_id)
@@ -79,7 +88,7 @@ def download(rule_id):
     pi = pool.imap(func, page_urls)  # iterator for progress
     for i in range(len(page_urls)):
         game_list.append(pi.next())
-        if i % 10 == 0:
+        if i % POOLS_SIZE == 0:
             print("[debug] downloaded pages [%d/%d]" % (i, len(page_urls)))
     game_list = list(itertools.chain(*game_list))
     print('[debug] downloaded %d game urls. used:%f s' %
@@ -91,7 +100,7 @@ def download(rule_id):
         gi = pool.imap(func, game_list)
         for i in range(len(game_list)):
             games_info.append(gi.next())
-            if i % 100 == 0:
+            if i % POOLS_SIZE == 0:
                 print("[debug] downloading progress %.2f%%" %
                       (i * 100 / len(game_list)))
     else:
@@ -106,7 +115,7 @@ def download(rule_id):
 
 '''
 usage:
-download(index of gamelib)
+download(index of grab_config_game_lib)
 '''
 if __name__ == '__main__':
     download(0)
