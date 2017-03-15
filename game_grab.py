@@ -6,6 +6,7 @@
 # since:2017-02-19
 
 import urllib.request
+import urllib.error
 import itertools
 from lxml import etree
 import json
@@ -34,7 +35,10 @@ def get_content(url, charset):
         fc = urllib.request.urlopen(url)
         TRY_TIMES = 10  # todo 用类进行封装
         return etree.HTML(fc.read().decode(charset))
-    except TimeoutError:  # 捕捉访问异常，一般为timeout，信息在e中
+    except UnicodeDecodeError as ude:
+        print("[error] decode error %s" % url)
+        print("[debug] info %s" % ude)
+    except urllib.error.URLError or TimeoutError:  # 捕捉访问异常，一般为timeout，信息在e中
         print("[retry %d] %s" % (TRY_TIMES, url))
         # print(traceback.format_exc())
         TRY_TIMES -= 1
