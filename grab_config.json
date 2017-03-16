@@ -2,7 +2,7 @@
   "rules": [
     {
       "site":"http://wanga.me",
-      "pool_size":"10",
+      "pool_size":"20",
       "replace":[
         {"\r\n\r\n":"\n"}],
       "games_page_max":"//div[@id=\"nav-below\"]/a[3]/text()",

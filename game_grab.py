@@ -15,15 +15,15 @@ from time import clock
 from functools import partial
 
 POOLS_SIZE = 20
-TRY_TIMES = 3
+TRY_TIMES = 100
 SINGLE_THREAD_DEBUG = False
 # SINGLE_THREAD_DEBUG = True
 CONFIG = None
 
 try:
-    with open('grab_config.json', 'r', encoding='utf-8') as fg:
+    with open('grab_config.json', 'r', encoding='utf8') as fg:
         CONFIG = json.load(fg)
-        print("[debug] config loaded.")
+        # print("[debug] config loaded.")
 except IOError as e:
     print("[error] %s" % e)
     exit()
@@ -33,13 +33,13 @@ def get_content(url, charset):
     global TRY_TIMES
     try:
         fc = urllib.request.urlopen(url)
-        TRY_TIMES = 10  # todo 用类进行封装
+        TRY_TIMES = 100 # todo 用类进行封装
         return etree.HTML(fc.read().decode(charset))
     except UnicodeDecodeError as ude:
         print("[error] decode error %s" % url)
         print("[debug] info %s" % ude)
     except urllib.error.URLError or TimeoutError:  # 捕捉访问异常，一般为timeout，信息在e中
-        print("[retry %d] %s" % (TRY_TIMES, url))
+        # print("[retry %d] %s" % (TRY_TIMES, url))
         # print(traceback.format_exc())
         TRY_TIMES -= 1
         if TRY_TIMES > 0:
@@ -62,7 +62,7 @@ def get_pages(rule_id):
 def get_page_games(rule_id, url):
     s = get_content(url, CONFIG["rules"][rule_id]["charset"])
     if s is None:
-        return
+        return []
     games_href = get_items(s, CONFIG["rules"][rule_id]["games_href"])
     return games_href
 
